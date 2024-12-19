@@ -7,20 +7,35 @@ export const jsonOk = (res: ServerResponse, data: any)=> {
     res.end(JSON.stringify(data));
 }
 
-export const jsonCreated = (res: ServerResponse, message: string | null = null, data: any) => {
+export const jsonCreated = (res: ServerResponse, message?: string, data?: any) => {
     res.writeHead(201, {
         'content-type' : 'application/json'
     });
 
     message ??= 'Entity created';
 
-    res.end(JSON.stringify({
+    res.end(JSON.stringify( data ? {
         message: message,
         createdEntity: data
-    }));
+    } : {message}));
 }
 
-export const notFound = (res: ServerResponse, message: string | null = null)=> {
+export const noContent = (res: ServerResponse) => {
+    res.writeHead(204);
+    res.end();
+}
+
+export const forbidden = (res: ServerResponse, message?: string) => {
+    res.writeHead(403, {
+        'content-type' : 'application/json'
+    });
+
+    message ??= 'Forbidden';
+
+    res.end(JSON.stringify({error : message}));
+}
+
+export const notFound = (res: ServerResponse, message?: string)=> {
     res.writeHead(404, {
         'content-type' : 'application/json'
     });
@@ -30,7 +45,7 @@ export const notFound = (res: ServerResponse, message: string | null = null)=> {
     res.end(JSON.stringify({error : message}));
 }
 
-export const badRequest = (res: ServerResponse, message: string | null = null) => {
+export const badRequest = (res: ServerResponse, message?: string) => {
     res.writeHead(400, {
         'content-type' : 'application/json'
     });
@@ -38,11 +53,6 @@ export const badRequest = (res: ServerResponse, message: string | null = null) =
     message ??= 'Bad request!';
 
     res.end(JSON.stringify({error : message}));
-}
-
-export const noContent = (res: ServerResponse) => {
-    res.writeHead(204);
-    res.end();
 }
 
 export const internalServerError = (res: ServerResponse, message: string | null = null) => {
@@ -54,3 +64,4 @@ export const internalServerError = (res: ServerResponse, message: string | null 
 
     res.end(JSON.stringify({error : message}));
 }
+
