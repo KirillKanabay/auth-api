@@ -12,6 +12,11 @@ export const signup : AsyncRequestListener = async (req, res) => {
         return badRequest(res, parseResult.error);
     }
     const {login, password} = parseResult.data!;
+    const validationErrors = validateCredentials(login, password);
+    if(validationErrors.length > 0){
+        return badRequest(res, validationErrors.join('; '));
+    }
+
     const executionResult = await authService.signup(login, password);
 
     if(!executionResult.isSuccess){
@@ -29,7 +34,6 @@ export const login: AsyncRequestListener = async (req, res) => {
 
     const {login, password} = parseResult.data!;
     const validationErrors = validateCredentials(login, password);
-
     if(validationErrors.length > 0){
         return badRequest(res, validationErrors.join('; '));
     }
@@ -65,8 +69,8 @@ export const refresh : AsyncRequestListener = async (req, res) => {
 const validateCredentials = (login: string, password: string) => {
     const errors: string[] = [];
 
-    if(!login){ errors.push('Login is required'); }
-    if(!password){ errors.push('Password is required'); }
+    if(!login || typeof login !== 'string'){ errors.push('Login is required or is not string'); }
+    if(!password || typeof password !== 'string'){ errors.push('Password is required or is not string'); }
 
     return errors;
 }
