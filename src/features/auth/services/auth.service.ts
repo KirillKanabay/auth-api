@@ -54,7 +54,7 @@ export class AuthService {
 
         if(!existingAccount ||
             !existingAccount.refreshTokenHash ||
-            !await PasswordService.comparePassword(refreshToken, existingAccount.refreshTokenHash) ||
+            !PasswordService.compareSHA256Hash(refreshToken, existingAccount.refreshTokenHash) ||
             userClaims.exp < Date.now()
         ){
             return ExecutionResult.fail(["Invalid refresh token"]);
@@ -67,7 +67,7 @@ export class AuthService {
         const accessToken = JwtService.generateToken(account, ACCESS_TOKEN_LIFETIME);
         const refreshToken = JwtService.generateToken(account, REFRESH_TOKEN_LIFETIME, true);
 
-        account.refreshTokenHash = await PasswordService.hashPassword(refreshToken);
+        account.refreshTokenHash = PasswordService.hashSHA256(refreshToken);
 
         await this._accountRepository.updateAsync(account);
 
