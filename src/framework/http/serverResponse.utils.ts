@@ -25,6 +25,16 @@ export const noContent = (res: ServerResponse) => {
     res.end();
 }
 
+export const unauthorized = (res: ServerResponse, message?: string) => {
+    res.writeHead(401, {
+       'content-type' : 'application/json'
+    });
+
+    message ??= 'Unauthorized';
+
+    res.end(JSON.stringify({error : message}));
+}
+
 export const forbidden = (res: ServerResponse, message?: string) => {
     res.writeHead(403, {
         'content-type' : 'application/json'

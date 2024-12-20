@@ -1,15 +1,17 @@
-import http from 'http';
-import {Router} from "./router";
-import {internalServerError} from "./serverResponse.utils";
-import {BASE_URL} from "../../config";
+import http, {IncomingMessage, ServerResponse} from 'http';
+import {Middleware, MiddlewareContext} from "./types/middleware.type";
 
 export class Application{
     private readonly _server;
-    private readonly _router: Router;
+    private readonly _middlewares: Middleware[];
 
-    constructor(router: Router){
+    constructor(){
         this._server = this._createServer();
-        this._router = router;
+        this._middlewares = [];
+    }
+
+    public use(middleware: Middleware){
+        this._middlewares.push(middleware);
     }
 
     public listen(port: number, callback?: () => void){
@@ -24,26 +26,22 @@ export class Application{
                 body += chunk;
             });
             req.on('end', async () => {
-                const method = req.method as HttpMethod;
-                const url = new URL(req.url!, BASE_URL).pathname;
-
-                const endpoint = this._router.findEndpoint(url, method);
-
-                if(endpoint){
-                    req.params = endpoint.params;
-                    req.rawBody = body;
-
-                    try {
-                        await endpoint.handler(req, res);
-                    } catch(e) {
-                        console.error(e);
-                        internalServerError(res);
-                    }
-                } else {
-                    res.statusCode = 404;
-                    res.end('Not Found');
-                }
+                req.rawBody = body;
+                await this._runMiddlewarePipeline(req, res);
             })
         });
+    }
+
+    private async _runMiddlewarePipeline(req: IncomingMessage, res: ServerResponse){
+        const ctx: MiddlewareContext = {};
+
+        const runMiddleware = async (idx: number) => {
+            if(idx === this._middlewares.length) return;
+            return this._middlewares[idx](ctx, req, res, (): Promise<void> => runMiddleware(idx + 1));
+        }
+
+        await runMiddleware(0);
+
+        return ctx;
     }
 }

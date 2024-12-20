@@ -1,11 +1,11 @@
-import {IncomingMessage, ServerResponse} from "http";
 import {AuthService} from "./services/auth.service";
 import {tryParse} from "../../framework/json.utils";
-import {badRequest, forbidden, jsonCreated, jsonOk} from "../../framework/http/serverResponse.utils";
+import {badRequest, forbidden, jsonCreated, jsonOk, unauthorized} from "../../framework/http/serverResponse.utils";
+import {AsyncRequestListener} from "../../framework/http/types/endpoint";
 
 const authService = new AuthService()
 
-export const signup = async (req: IncomingMessage, res: ServerResponse) => {
+export const signup : AsyncRequestListener = async (req, res) => {
     const parseResult = tryParse<{login: string, password: string}>(req.rawBody);
 
     if(!parseResult.success){
@@ -21,7 +21,7 @@ export const signup = async (req: IncomingMessage, res: ServerResponse) => {
     return jsonCreated(res, 'Account created');
 }
 
-export const login = async (req: IncomingMessage, res: ServerResponse) => {
+export const login: AsyncRequestListener = async (req, res) => {
     const parseResult = tryParse<{login: string, password: string}>(req.rawBody);
     if(!parseResult.success){
         return badRequest(res, parseResult.error);
@@ -43,8 +43,23 @@ export const login = async (req: IncomingMessage, res: ServerResponse) => {
     return jsonOk(res, executionResult.data);
 }
 
-export const refresh = (req: IncomingMessage, res: ServerResponse) => {
+export const refresh : AsyncRequestListener = async (req, res) => {
+    const parseResult = tryParse<{refreshToken: string}>(req.rawBody);
+    if(!parseResult.success){
+        return badRequest(res, parseResult.error);
+    }
 
+    const {refreshToken} = parseResult.data!;
+    if(!refreshToken) {
+        return unauthorized(res, 'Refresh token is required');
+    }
+
+    const executionResult = await authService.refresh(refreshToken);
+    if(!executionResult.isSuccess){
+        return forbidden(res, executionResult.errors!.join('; '));
+    }
+
+    return jsonOk(res, executionResult.data);
 }
 
 const validateCredentials = (login: string, password: string) => {

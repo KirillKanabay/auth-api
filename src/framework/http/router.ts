@@ -1,4 +1,9 @@
-import {AsyncRequestListener, DynamicEndpoint, Endpoint, EndpointInfo} from "./types/endpoint";
+import {
+    AsyncRequestListener,
+    DynamicEndpoint,
+    Endpoint,
+    EndpointInfo,
+    EndpointOptions} from "./types/endpoint";
 
 export class Router{
     protected readonly Endpoints: Map<string, Endpoint>;
@@ -9,7 +14,7 @@ export class Router{
         this.DynamicEndpoints = [];
     }
 
-    public addEndpoint(method: HttpMethod, path: string, handler: AsyncRequestListener){
+    public addEndpoint(method: HttpMethod, path: string, handler: AsyncRequestListener, options?: EndpointOptions){
         if(path.includes(':')){
             const { pathRegex, params } = this._createPathRegex(path);
 
@@ -17,7 +22,8 @@ export class Router{
                 pathRegex,
                 params,
                 method,
-                handler
+                handler,
+                options
             });
 
             return;
@@ -28,23 +34,23 @@ export class Router{
         }
 
         const endpoint = this.Endpoints.get(path)!;
-        endpoint[method] = handler;
+        endpoint[method] = { handler, options };
     }
 
-    public get(path: string, handler: AsyncRequestListener){
-        this.addEndpoint('GET', path, handler);
+    public get(path: string, handler: AsyncRequestListener, options?: EndpointOptions){
+        this.addEndpoint('GET', path, handler, options);
     }
 
-    public post(path: string, handler: AsyncRequestListener){
-        this.addEndpoint('POST', path, handler);
+    public post(path: string, handler: AsyncRequestListener, options?: EndpointOptions){
+        this.addEndpoint('POST', path, handler, options);
     }
 
-    public put(path: string, handler: AsyncRequestListener){
-        this.addEndpoint('PUT', path, handler);
+    public put(path: string, handler: AsyncRequestListener, options?: EndpointOptions){
+        this.addEndpoint('PUT', path, handler, options);
     }
 
-    public delete(path: string, handler: AsyncRequestListener){
-        this.addEndpoint('DELETE', path, handler);
+    public delete(path: string, handler: AsyncRequestListener, options?: EndpointOptions){
+        this.addEndpoint('DELETE', path, handler, options);
     }
 
     public findEndpoint(path: string, method: HttpMethod) : EndpointInfo | null {
@@ -54,7 +60,7 @@ export class Router{
             return {
                 path,
                 method,
-                handler: endpoint[method]
+                ...endpoint[method]
             };
         }
 
@@ -74,7 +80,8 @@ export class Router{
                 path,
                 method,
                 handler: dynamicEndpoint.handler,
-                params
+                params,
+                options: dynamicEndpoint.options
             }
         }
 
